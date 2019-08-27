@@ -1,0 +1,50 @@
+version: '3.3'
+services:
+  connect:
+    image: debezium/connect:0.9
+    container_name: connect
+    ports:
+      - "8083:8083"
+    environment:
+      OFFSET_STORAGE_TOPIC: __connect_offset_storage
+      CONFIG_STORAGE_TOPIC: __connect_config_storage
+      STATUS_STORAGE_TOPIC: __connect_status_storage
+      BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      - kafka
+      - mysql # to save from strange errors on connect setup commands
+  kafka:
+    image: wurstmeister/kafka:2.12-2.1.0
+    container_name: kafka
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+  zookeeper:
+    image: wurstmeister/zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+  mysql:
+    image: mysql:5.7
+    command: --log-bin=log_bin_dir --server-id=6033
+    container_name: mysql
+    environment:
+      MYSQL_DATABASE: 'db'
+      MYSQL_USER: 'user1' 
+      MYSQL_PASSWORD: 'password1'
+      MYSQL_ROOT_PASSWORD: 'root_password'
+      MYSQL_HOST: 'mysql'
+    ports:
+      - '3306:3306'
+    expose:
+      - '3306'
+    volumes:
+      - docker-db:/var/lib/mysql
+volumes:
+  docker-db:
